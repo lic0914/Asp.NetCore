@@ -7,71 +7,36 @@ using IdentityServer4.Services;
 using Microsoft.AspNetCore.Mvc;
 using MvcCookieAuthSample.Models;
 using IdentityServer4.Models;
+using MvcCookieAuthSample.Services;
 
 namespace MvcCookieAuthSample.Controllers
 {
     public class ConsentController : Controller
     {
-        private readonly IClientStore _clientStore;
-        private readonly IResourceStore _resourceStore;
-        private readonly IIdentityServerInteractionService _identityServerInteractionService;
-        public ConsentController(
-            IClientStore clientStore,
-            IResourceStore resourceStore,
-            IIdentityServerInteractionService identityServerInteractionService)
+        private readonly ConsentService _consentSvc;
+        public ConsentController(ConsentService consentSvc)
         {
-            _clientStore = clientStore;
-            _resourceStore = resourceStore;
-            _identityServerInteractionService = identityServerInteractionService;
+            _consentSvc = consentSvc;
         }
-        private async Task<ConsentViewModel> BuildConsentViewModel(string returnUrl)
+        public async Task<IActionResult> Index(string returnUrl, InputConsentViewModel vm)
         {
-            var request =await _identityServerInteractionService.GetAuthorizationContextAsync(returnUrl);
-            if (request == null)
-                return null;
-
-            var client =await _clientStore.FindEnabledClientByIdAsync(request.ClientId);
-            var resources =await _resourceStore.FindEnabledResourcesByScopeAsync(request.ScopesRequested);
-            return CreateConsentViewModel(request, client, resources);
-
-        }
-        private ConsentViewModel CreateConsentViewModel(AuthorizationRequest request,Client client,Resources resource)
-        {
-            var vm = new ConsentViewModel();
-            vm.ClientName = client.ClientName;
-            vm.ClientLogoUrl = client.LogoUri;
-            vm.ClientUrl = client.ClientUri;
-            vm.AllowRememberConsent = client.AllowRememberConsent;
-            vm.IdentityScopes = resource.IdentityResources.Select(i => CreateScopeViewModel(i));
-            vm.ResourceScopes = resource.ApiResources.SelectMany(i => i.Scopes).Select(x => CreateScopeViewModel(x));
-            return vm;
-        }
-        private ScopeViewModel CreateScopeViewModel(IdentityResource identity)
-        {
-            return new ScopeViewModel
-            {
-                Name = identity.Name,
-                DisplayName = identity.DisplayName,
-                Required = identity.Required,
-                Checked = identity.Required,
-                Emphasize = identity.Emphasize,
-            };
-        }
-        private ScopeViewModel CreateScopeViewModel(Scope scope)
-        {
-            return new ScopeViewModel
-            {
-                Name = scope.Name,
-                DisplayName = scope.DisplayName,
-                Required = scope.Required,
-                Checked = scope.Required,
-                Emphasize = scope.Emphasize,
-            };
-        }
-        public async Task<IActionResult> Index(string returnUrl)
-        {
-            var model =await BuildConsentViewModel(returnUrl);
+            var model = await _consentSvc.BuildConsentViewModel(returnUrl, vm);
             return View(model);
+        }
+        [HttpPost]
+        public async Task<IActionResult> Index(InputConsentViewModel vm)
+        {
+
+            var result = await _consentSvc.ProcessConsent(vm);
+            if (result.IsRedirect)
+            {
+                return Redirect(result.RedirectUrl);
+            }
+            if (!string.IsNullOrEmpty(result.ValidationError))
+            {
+                ModelState.AddModelError("", result.ValidationError);
+            }
+            return View(result.ConsentViewModel);
         }
     }
 }

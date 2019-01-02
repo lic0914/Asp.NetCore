@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using IdentityServer4;
+using MvcCookieAuthSample.Services;
 
 namespace MvcCookieAuthSample
 {
@@ -30,7 +31,7 @@ namespace MvcCookieAuthSample
                 .AddInMemoryApiResources(Config.GetApiResources())
                 .AddInMemoryIdentityResources(Config.GetIdentityResources())
                 .AddTestUsers(Config.GetTestUsers());
-                
+
 
             //services.Configure<CookiePolicyOptions>(options =>
             //{
@@ -39,7 +40,7 @@ namespace MvcCookieAuthSample
             //    options.MinimumSameSitePolicy = SameSiteMode.None;
             //});
 
-
+            services.AddScoped<ConsentService>();
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
         }
 

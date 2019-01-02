@@ -5,6 +5,9 @@ using System.Threading.Tasks;
 
 namespace MvcCookieAuthSample.Models
 {
+   
+
+
     public class ScopeViewModel
     {
         public string Name { get; set; }
