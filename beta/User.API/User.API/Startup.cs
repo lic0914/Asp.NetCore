@@ -28,6 +28,7 @@ namespace User.API
         {
             services.AddDbContext<UserContext>(opt =>
             {
+                
                 opt.UseMySql(Configuration.GetConnectionString("mysqluser"));
             });
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
@@ -52,7 +53,7 @@ namespace User.API
                 var userContext = scope.ServiceProvider.GetRequiredService<UserContext>();
                 if (!userContext.AppUser.Any())
                 {
-                    userContext.AppUser.Add(new Model.AppUser { Name = "lic" });
+                    userContext.AppUser.Add(new Models.AppUser { Name = "lic" });
                     userContext.SaveChanges();
                 }
             }
